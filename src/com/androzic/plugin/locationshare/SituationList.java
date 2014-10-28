@@ -3,12 +3,8 @@ package com.androzic.plugin.locationshare;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import net.londatiga.android.ActionItem;
-import net.londatiga.android.QuickAction;
-import net.londatiga.android.QuickAction.OnActionItemClickListener;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
-import android.app.ListActivity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,11 +13,18 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.internal.view.SupportMenuInflater;
+import android.support.v7.internal.view.menu.MenuBuilder;
+import android.support.v7.internal.view.menu.MenuPopupHelper;
+import android.support.v7.internal.view.menu.MenuPresenter;
+import android.support.v7.widget.SwitchCompat;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,33 +32,33 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 import com.androzic.data.Situation;
 import com.androzic.navigation.BaseNavigationService;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
 
-public class SituationList extends ListActivity implements OnSharedPreferenceChangeListener
+public class SituationList extends ActionBarActivity implements OnSharedPreferenceChangeListener, OnItemClickListener, MenuBuilder.Callback, MenuPresenter.Callback, OnCheckedChangeListener
 {
 	private static final String TAG = "SituationList";
 
+	private ListView listView;
+	private TextView emptyView;
 	private SituationListAdapter adapter;
 	public SharingService sharingService = null;
 
 	private Timer timer;
 	// private int timeoutInterval = 600; // 10 minutes (default)
 
-	private ToggleButton toggle;
+	private SwitchCompat enableSwitch;
 
-	private static final int qaTrackerVisible = 1;
-	private static final int qaTrackerNavigate = 2;
-	
-    private QuickAction quickAction;
 	private int selectedPosition = -1;
 	private Drawable selectedBackground;
 
@@ -65,40 +68,19 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.act_userlist);
 
-		TextView emptyView = (TextView) getListView().getEmptyView();
-		if (emptyView != null)
-			emptyView.setText(R.string.msg_empty_list);
+	    Toolbar toolbar = (Toolbar) findViewById(R.id.action_toolbar);
+	    setSupportActionBar(toolbar);
 
-		// TODO Check session and user are set
-		toggle = (ToggleButton) findViewById(R.id.enable_toggle);
-		toggle.setEnabled(false);
+	    listView = (ListView) findViewById(android.R.id.list);
+		emptyView = (TextView) findViewById(android.R.id.empty);
+		listView.setEmptyView(emptyView);
 
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-		onSharedPreferenceChanged(sharedPreferences, null);
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-		// Prepare quick actions menu
-		Resources resources = getResources();
-		quickAction = new QuickAction(this);
-		quickAction.addActionItem(new ActionItem(qaTrackerVisible, getString(R.string.menu_view), resources.getDrawable(R.drawable.ic_action_show)));
-		quickAction.addActionItem(new ActionItem(qaTrackerNavigate, getString(R.string.menu_navigate), resources.getDrawable(R.drawable.ic_action_directions)));
-
-		quickAction.setOnActionItemClickListener(situationActionItemClickListener);
-		quickAction.setOnDismissListener(new PopupWindow.OnDismissListener() {			
-			@Override
-			public void onDismiss()
-			{
-				View v = getListView().findViewWithTag("selected");
-				if (v != null)
-				{
-					v.setBackgroundDrawable(selectedBackground);
-					v.setTag(null);
-				}
-			}
-		});
-
 		adapter = new SituationListAdapter(this);
-		setListAdapter(adapter);
+		listView.setAdapter(adapter);
+		listView.setOnItemClickListener(this);
 	}
 
 	@Override
@@ -107,7 +89,6 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 		super.onResume();
 		if (isServiceRunning())
 		{
-			toggle.setChecked(true);
 			connect();
 		}
 	}
@@ -130,6 +111,18 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 	{
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.preferences, menu);
+
+		// Get widget's instance
+		enableSwitch = (SwitchCompat)  MenuItemCompat.getActionView(menu.findItem(R.id.action_enable));
+		enableSwitch.setOnCheckedChangeListener(this);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		onSharedPreferenceChanged(sharedPreferences, null);
+		if (isServiceRunning())
+		{
+			enableSwitch.setChecked(true);
+		}
+
 		return true;
 	}
 
@@ -138,7 +131,7 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 	{
 		switch (item.getItemId())
 		{
-			case R.id.menuPreferences:
+			case R.id.action_settings:
 				startActivity(new Intent(this, Preferences.class));
 				return true;
 		}
@@ -146,28 +139,37 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 	}
 
 	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id)
+	public void onItemClick(AdapterView<?> l, View v, int position, long id)
 	{
 		v.setTag("selected");
 		selectedPosition = position;
 		selectedBackground = v.getBackground();
 		v.setBackgroundResource(R.drawable.list_selector_background_focus);
-		quickAction.show(v);
+		// https://gist.github.com/mediavrog/9345938#file-iconizedmenu-java-L55
+		MenuBuilder menu = new MenuBuilder(this);
+		menu.setCallback(this);
+		MenuPopupHelper popup = new MenuPopupHelper(this, menu, v.findViewById(R.id.name));
+		popup.setForceShowIcon(true);
+		popup.setCallback(this);
+		new SupportMenuInflater(this).inflate(R.menu.situation_popup, menu);
+		popup.show();
 	}
 
-	public void onToggleEnable(View view)
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
 	{
-		if (toggle.isChecked() && !isServiceRunning())
+		if (isChecked && !isServiceRunning())
 		{
+			emptyView.setText(R.string.msg_no_users);
 			startService(new Intent(this, SharingService.class));
 			connect();
 		}
-		else if (!toggle.isChecked() && isServiceRunning())
+		else if (!isChecked && isServiceRunning())
 		{
 			disconnect();
 			stopService(new Intent(this, SharingService.class));
-			TextView title = (TextView) findViewById(R.id.title_text);
-			title.setText("");
+			getSupportActionBar().setSubtitle("");
+			emptyView.setText(R.string.msg_needs_enable);
 			adapter.notifyDataSetChanged();
 		}
 	}
@@ -206,32 +208,55 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 		return false;
 	}
 
-	private OnActionItemClickListener situationActionItemClickListener = new OnActionItemClickListener(){
-		@Override
-		public void onItemClick(QuickAction source, int pos, int actionId)
+	@Override
+	public boolean onMenuItemSelected(MenuBuilder builder, MenuItem item)
+	{
+		Situation situation = adapter.getItem(selectedPosition);
+
+		switch (item.getItemId())
 		{
-			Situation situation = adapter.getItem(selectedPosition);
-	
-	    	switch (actionId)
-	    	{
-	    		case qaTrackerVisible:
-					Log.d(TAG, "Passing coordinates to Androzic");
-					Intent i = new Intent("com.androzic.CENTER_ON_COORDINATES");
-					i.putExtra("lat", situation.latitude);
-					i.putExtra("lon", situation.longitude);
-					sendBroadcast(i);
-					break;
-				case qaTrackerNavigate:
-					Intent intent = new Intent(BaseNavigationService.NAVIGATE_MAPOBJECT_WITH_ID);
-					intent.putExtra(BaseNavigationService.EXTRA_ID, situation._id);
-					startService(intent);
-					finish();
-					break;
-	    	}
-	    	
-	    	selectedPosition = -1;
+			case R.id.action_view:
+				Intent i = new Intent("com.androzic.CENTER_ON_COORDINATES");
+				i.putExtra("lat", situation.latitude);
+				i.putExtra("lon", situation.longitude);
+				sendBroadcast(i);
+				return true;
+			case R.id.action_navigate:
+				Intent intent = new Intent(BaseNavigationService.NAVIGATE_MAPOBJECT_WITH_ID);
+				intent.putExtra(BaseNavigationService.EXTRA_ID, situation._id);
+				startService(intent);
+				finish();
+				return true;
 		}
-	};
+		return false;
+	}
+
+	@Override
+	public void onMenuModeChange(MenuBuilder builder)
+	{
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public void onCloseMenu(MenuBuilder menu, boolean allMenusAreClosing)
+	{
+    	selectedPosition = -1;
+		if (allMenusAreClosing && listView != null)
+		{
+			View v = listView.findViewWithTag("selected");
+			if (v != null)
+			{
+				v.setBackgroundDrawable(selectedBackground);
+				v.setTag(null);
+			}
+		}
+	}
+
+	@Override
+	public boolean onOpenSubMenu(MenuBuilder menu)
+	{
+		return false;
+	}
 
 	private ServiceConnection sharingConnection = new ServiceConnection() {
 		public void onServiceConnected(ComponentName className, IBinder service)
@@ -241,8 +266,7 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 			runOnUiThread(new Runnable() {
 				public void run()
 				{
-					TextView title = (TextView) findViewById(R.id.title_text);
-					title.setText(sharingService.user + " ∈ " + sharingService.session);
+					getSupportActionBar().setSubtitle(sharingService.user + " ∈ " + sharingService.session);
 					adapter.notifyDataSetChanged();
 				}
 			});
@@ -252,8 +276,7 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 		public void onServiceDisconnected(ComponentName className)
 		{
 			sharingService = null;
-			TextView title = (TextView) findViewById(R.id.title_text);
-			title.setText("");
+			getSupportActionBar().setSubtitle("");
 			adapter.notifyDataSetChanged();
 			Log.d(TAG, "Sharing service disconnected");
 		}
@@ -413,7 +436,15 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 		String session = sharedPreferences.getString(getString(R.string.pref_sharing_session), "");
 		String user = sharedPreferences.getString(getString(R.string.pref_sharing_user), "");
 		if (!session.trim().equals("") && !user.trim().equals(""))
-			toggle.setEnabled(true);
+		{
+			enableSwitch.setEnabled(true);
+			emptyView.setText(R.string.msg_needs_enable);
+		}
+		else
+		{
+			enableSwitch.setEnabled(false);
+			emptyView.setText(R.string.msg_needs_setup);
+		}
 
 		if (adapter != null)
 			adapter.notifyDataSetChanged();
@@ -426,7 +457,7 @@ public class SituationList extends ListActivity implements OnSharedPreferenceCha
 			runOnUiThread(new Runnable() {
 				public void run()
 				{
-					if (adapter != null)
+					if (adapter != null && selectedPosition == -1)
 						adapter.notifyDataSetChanged();
 				}
 			});

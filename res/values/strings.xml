@@ -2,9 +2,9 @@
 <resources>
 
     <string name="app_name">Androzic Location Share Plugin</string>
-    <string name="on">On</string>
-    <string name="off">Off</string>
-    <string name="msg_empty_list">Nothing to display</string>
+    <string name="msg_needs_setup">You have to setup your session details</string>
+    <string name="msg_needs_enable">Enable sharing to receive information about session users</string>
+    <string name="msg_no_users">Looks like nobody shares their location with you</string>
     <string name="notif_sharing">Androzic is sharing location in real-time</string>
     <string name="notif_error">Androzic is unable to share location</string>
     <string name="notif_newsession">%s has joined session</string>
