@@ -9,6 +9,9 @@ import android.preference.Preference;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
 import android.support.v4.preference.PreferenceFragment;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 
 import com.androzic.ui.SeekbarPreference;
 
@@ -20,6 +23,7 @@ public class PreferencesFragment extends PreferenceFragment implements OnSharedP
 		super.onCreate(savedInstanceState);
 
 		addPreferencesFromResource(R.xml.preferences);
+		setHasOptionsMenu(true);
 	}
 
     @Override
@@ -36,6 +40,27 @@ public class PreferencesFragment extends PreferenceFragment implements OnSharedP
     	super.onPause();
         getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);    
     }
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+	{
+		inflater.inflate(R.menu.help, menu);
+		super.onCreateOptionsMenu(menu, inflater);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		switch (item.getItemId())
+		{
+			case R.id.action_help:
+				PreferencesHelpDialog dialog = new PreferencesHelpDialog();
+				dialog.show(getFragmentManager(), "dialog");
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+	}
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
     {
