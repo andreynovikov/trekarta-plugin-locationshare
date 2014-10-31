@@ -266,7 +266,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 			runOnUiThread(new Runnable() {
 				public void run()
 				{
-					getSupportActionBar().setSubtitle(sharingService.user + " ∈ " + sharingService.session);
+					getSupportActionBar().setSubtitle(sharingService.user + " \u2208 " + sharingService.session);
 					adapter.notifyDataSetChanged();
 				}
 			});
