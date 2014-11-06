@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Уведомление о новом пользователе</string>
   <string name="pref_sharing_tagcolor_title">Цвет метки</string>
   <string name="pref_sharing_tagwidth_title">Размер метки</string>
-  <string name="pref_sharing_tagwidth_summary">Размер метки в пикселях</string>
 </resources>

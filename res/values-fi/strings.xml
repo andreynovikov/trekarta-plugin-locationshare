@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Uusi käyttäjä ilmoitus</string>
   <string name="pref_sharing_tagcolor_title">Tagin väri</string>
   <string name="pref_sharing_tagwidth_title">Tagin koko</string>
-  <string name="pref_sharing_tagwidth_summary">Tagin koko</string>
 </resources>

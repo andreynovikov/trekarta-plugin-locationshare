@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Yeni kullanıcı bildirimi</string>
   <string name="pref_sharing_tagcolor_title">Etiket rengi</string>
   <string name="pref_sharing_tagwidth_title">Etiket boyutu</string>
-  <string name="pref_sharing_tagwidth_summary">Etiket işaretçisinin piksel boyutu</string>
 </resources>

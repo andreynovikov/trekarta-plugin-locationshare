@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">新用户通知</string>
   <string name="pref_sharing_tagcolor_title">标签颜色</string>
   <string name="pref_sharing_tagwidth_title">标签大小</string>
-  <string name="pref_sharing_tagwidth_summary">标记的像素大小</string>
 </resources>

@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">New user notification</string>
   <string name="pref_sharing_tagcolor_title">Цвят на етикета</string>
   <string name="pref_sharing_tagwidth_title">Размер на етикета</string>
-  <string name="pref_sharing_tagwidth_summary">The pixel size of tag marker</string>
 </resources>

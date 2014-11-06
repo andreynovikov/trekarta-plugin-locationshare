@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Notifiering om ny användare</string>
   <string name="pref_sharing_tagcolor_title">Etikett färg</string>
   <string name="pref_sharing_tagwidth_title">Etikett storlek</string>
-  <string name="pref_sharing_tagwidth_summary">Etikett markör pixelstorlek</string>
 </resources>

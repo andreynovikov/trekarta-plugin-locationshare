@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Obavještenje za novog korisnika</string>
   <string name="pref_sharing_tagcolor_title">Boja oznake</string>
   <string name="pref_sharing_tagwidth_title">Veličina oznake</string>
-  <string name="pref_sharing_tagwidth_summary">Veličina u pikselima markera oznake</string>
 </resources>

@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Notificación de nuevo usuario</string>
   <string name="pref_sharing_tagcolor_title">Color de etiqueta</string>
   <string name="pref_sharing_tagwidth_title">Tamaño de etiqueta</string>
-  <string name="pref_sharing_tagwidth_summary">El tamaño en píxeles del marcador de etiqueta</string>
 </resources>

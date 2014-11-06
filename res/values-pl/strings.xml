@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Nowe zgłoszenie użytkownika</string>
   <string name="pref_sharing_tagcolor_title">Kolor znacznika</string>
   <string name="pref_sharing_tagwidth_title">Rozmiar znacznika</string>
-  <string name="pref_sharing_tagwidth_summary">Rozmiar znacznika w pikselach</string>
 </resources>

@@ -23,5 +23,4 @@
   <string name="pref_sharing_notifications_title">Melding voor nieuwe gebruiker</string>
   <string name="pref_sharing_tagcolor_title">Label kleur</string>
   <string name="pref_sharing_tagwidth_title">Label grootte</string>
-  <string name="pref_sharing_tagwidth_summary">De pixelgrootte van label marker</string>
 </resources>
