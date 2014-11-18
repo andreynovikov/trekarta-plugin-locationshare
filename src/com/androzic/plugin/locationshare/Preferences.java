@@ -15,11 +15,18 @@ public class Preferences extends ActionBarActivity
 
 		Toolbar toolbar = (Toolbar) findViewById(R.id.action_toolbar);
 		setSupportActionBar(toolbar);
-		
-		toolbar.setSubtitle(R.string.pref_sharing_title);
 
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		getSupportActionBar().setHomeButtonEnabled(true);
+	}
+
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+		// Should be set here, if set in onCreate() it gets overwritten somewhere later
+		getSupportActionBar().setTitle(R.string.menu_preferences);
+		getSupportActionBar().setSubtitle(R.string.pref_sharing_title);
 	}
 
 	@Override
