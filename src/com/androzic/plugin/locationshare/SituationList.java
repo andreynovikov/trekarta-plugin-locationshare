@@ -61,6 +61,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 
 	private int selectedPosition = -1;
 	private Drawable selectedBackground;
+	private int accentColor;
 
 	@Override
 	public void onCreate(final Bundle savedInstanceState)
@@ -77,6 +78,8 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+		
+		accentColor = getResources().getColor(R.color.theme_accent_color);
 
 		adapter = new SituationListAdapter(this);
 		listView.setAdapter(adapter);
@@ -144,7 +147,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 		v.setTag("selected");
 		selectedPosition = position;
 		selectedBackground = v.getBackground();
-		v.setBackgroundResource(R.drawable.list_selector_background_focus);
+		v.setBackgroundColor(accentColor);
 		// https://gist.github.com/mediavrog/9345938#file-iconizedmenu-java-L55
 		MenuBuilder menu = new MenuBuilder(this);
 		menu.setCallback(this);
@@ -363,7 +366,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 				v = mInflater.inflate(mItemLayout, parent, false);
 			}
 			if (position == selectedPosition)
-				v.setBackgroundResource(R.drawable.list_selector_background_focus);
+				v.setBackgroundColor(accentColor);
 
 			Situation stn = getItem(position);
 			if (stn != null && sharingService != null)
