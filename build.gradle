@@ -32,5 +32,6 @@ android {
 dependencies {
     compile project(':library')
     compile project(':libraries:android-support-v4-preferencefragment')
+    compile project(':libraries:color-picker-view:library')
     compile 'com.android.support:appcompat-v7:21.0.3'
 }
