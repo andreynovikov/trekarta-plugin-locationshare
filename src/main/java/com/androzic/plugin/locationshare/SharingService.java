@@ -89,7 +89,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	private ContentProviderClient contentProvider;
 
-	Location currentLocation = new Location("fake");
+	final Location currentLocation = new Location("fake");
 	String session;
 	String user;
 	private int updateInterval = 10000; // 10 seconds (default)
@@ -98,8 +98,8 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 	double speedFactor = 1;
 	String speedAbbr = "m/s";
 
-	private Map<String, Situation> situations;
-	List<Situation> situationList;
+	private final Map<String, Situation> situations = new HashMap<>();
+	final List<Situation> situationList = new ArrayList<>();
 
 	// Drawing resources
 	private Paint linePaint;
@@ -115,10 +115,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		// Prepare notification components
 		notification = new Notification();
 		contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, SituationList.class), 0);
-
-		// Initialize data structures
-		situations = new HashMap<String, Situation>();
-		situationList = new ArrayList<Situation>();
 
 		// Connect to data provider
 		contentProvider = getContentResolver().acquireContentProviderClient(DataContract.MAPOBJECTS_URI);
@@ -195,7 +191,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	private void clearSituations()
 	{
-		String[] args = null;
+		String[] args;
 		synchronized (situationList)
 		{
 			args = new String[situationList.size()];
@@ -242,7 +238,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 				boolean updated = false;
 				try
 				{
-					String query = null;
+					String query;
 					synchronized (currentLocation)
 					{
 						query = "session=" + URLEncoder.encode(session) + ";user=" + URLEncoder.encode(user) + ";lat=" + currentLocation.getLatitude() + ";lon=" + currentLocation.getLongitude()
@@ -484,6 +480,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 			}
 			catch (RemoteException e)
 			{
+				e.printStackTrace();
 			}
 			unbindService(locationConnection);
 			locationService = null;
@@ -558,6 +555,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		errorState = false;
 	}
 
+	@SuppressWarnings("unused")
 	private void showErrorNotification()
 	{
 		if (errorState)

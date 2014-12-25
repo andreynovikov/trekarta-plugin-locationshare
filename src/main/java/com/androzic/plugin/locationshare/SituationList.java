@@ -25,6 +25,7 @@ import android.support.v7.internal.view.menu.MenuPopupHelper;
 import android.support.v7.internal.view.menu.MenuPresenter;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -361,7 +362,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 			}
 			else
 			{
-				v = convertView;
+				// v = convertView;
 				// TODO Have to utilize view
 				v = mInflater.inflate(mItemLayout, parent, false);
 			}
@@ -402,8 +403,9 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 				{
 					text.setText(speed + " " + sharingService.speedAbbr);
 				}
-				int d = (int) ((System.currentTimeMillis() - sharingService.timeCorrection - stn.time) / 1000);
-				String delay = StringFormatter.timeHP(d, sharingService.timeoutInterval / 1000);
+				long now = System.currentTimeMillis();
+				long d = 0 - sharingService.timeCorrection - stn.time;
+				String delay = (String) DateUtils.getRelativeTimeSpanString(d, now, DateUtils.SECOND_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
 				text = (TextView) v.findViewById(R.id.delay);
 				if (text != null)
 				{
