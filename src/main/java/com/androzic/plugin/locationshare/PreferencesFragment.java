@@ -7,7 +7,6 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceGroup;
-import android.preference.PreferenceScreen;
 import android.support.v4.preference.PreferenceFragment;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -31,14 +30,14 @@ public class PreferencesFragment extends PreferenceFragment implements OnSharedP
     {
         super.onResume();
         initSummaries(getPreferenceScreen());
-        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
 	public void onPause()
     {
     	super.onPause();
-        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);    
+	    getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
     }
 
 	@Override
@@ -103,7 +102,7 @@ public class PreferencesFragment extends PreferenceFragment implements OnSharedP
     		Preference pref = preference.getPreference(i);
            	setPrefSummary(pref);
 
-    		if (pref instanceof PreferenceGroup || pref instanceof PreferenceScreen)
+    		if (pref instanceof PreferenceGroup)
             {
     			initSummaries((PreferenceGroup) pref);
             }

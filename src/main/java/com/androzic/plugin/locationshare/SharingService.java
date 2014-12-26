@@ -3,7 +3,6 @@ package com.androzic.plugin.locationshare;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,12 +17,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Notification;
@@ -41,6 +38,8 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -57,6 +56,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.androzic.data.Situation;
@@ -76,12 +76,10 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	private ILocationRemoteService locationService = null;
 
-	private boolean errorState = false;
 	private boolean sharingEnabled = false;
 	private boolean isSuspended = false;
 	private boolean notifyNewSituation = false;
 
-	private Notification notification;
 	private PendingIntent contentIntent;
 
 	ThreadPoolExecutor executorThread = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(1));
@@ -113,7 +111,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		super.onCreate();
 
 		// Prepare notification components
-		notification = new Notification();
 		contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, SituationList.class), 0);
 
 		// Connect to data provider
@@ -158,7 +155,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		registerReceiver(broadcastReceiver, new IntentFilter(BaseLocationService.BROADCAST_LOCATING_STATUS));
 
 		// Connect to location service
-		prepareNormalNotification();
 		sharingEnabled = true;
 		isSuspended = true;
 		connect();
@@ -183,7 +179,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		// Release data provider
 		contentProvider.release();
 
-		notification = null;
 		contentIntent = null;
 
 		Log.i(TAG, "Service stopped");
@@ -225,9 +220,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	protected void updateSituations()
 	{
-		notification.icon = R.drawable.ic_stat_sharing_out;
-		final NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		nm.notify(NOTIFICATION_ID, notification);
+		updateNotification(R.drawable.ic_stat_sharing_out);
 
 		executorThread.getQueue().poll();
 		executorThread.execute(new Runnable() {
@@ -241,15 +234,14 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 					String query;
 					synchronized (currentLocation)
 					{
-						query = "session=" + URLEncoder.encode(session) + ";user=" + URLEncoder.encode(user) + ";lat=" + currentLocation.getLatitude() + ";lon=" + currentLocation.getLongitude()
+						query = "session=" + URLEncoder.encode(session, "UTF-8") + ";user=" + URLEncoder.encode(user, "UTF-8") + ";lat=" + currentLocation.getLatitude() + ";lon=" + currentLocation.getLongitude()
 								+ ";track=" + currentLocation.getBearing() + ";speed=" + currentLocation.getSpeed() + ";ftime=" + currentLocation.getTime();
 					}
 					URL = new URI("http", null, "androzic.com", 80, "/cgi-bin/loc.cgi", query, null);
 
 					HttpClient httpclient = new DefaultHttpClient();
 					HttpResponse response = httpclient.execute(new HttpGet(URL));
-					notification.icon = R.drawable.ic_stat_sharing_in;
-					nm.notify(NOTIFICATION_ID, notification);
+					updateNotification(R.drawable.ic_stat_sharing_in);
 					StatusLine statusLine = response.getStatusLine();
 					if (statusLine.getStatusCode() == HttpStatus.SC_OK)
 					{
@@ -293,22 +285,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 						throw new IOException(statusLine.getReasonPhrase());
 					}
 				}
-				catch (URISyntaxException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch (ClientProtocolException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch (IOException e)
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch (JSONException e)
+				catch (Exception e)
 				{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -336,11 +313,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 					e.printStackTrace();
 				}
 
-				if (notification != null)
-				{
-					notification.icon = R.drawable.ic_stat_sharing;
-					nm.notify(NOTIFICATION_ID, notification);
-				}
+				updateNotification(R.drawable.ic_stat_sharing);
 			}
 		});
 	}
@@ -353,19 +326,26 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		i.putExtra("origin", getApplicationContext().getPackageName());
 		i.putExtra("lat", situation.latitude);
 		i.putExtra("lon", situation.longitude);
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) situation._id, i, PendingIntent.FLAG_ONE_SHOT);
 
 		String msg = getString(R.string.notif_newsession, situation.name);
-		
-		Notification newNotification = new Notification();
-		newNotification.when = situation.time;
-		newNotification.icon = R.drawable.ic_stat_sharing;
-		newNotification.defaults = Notification.DEFAULT_SOUND;
-		newNotification.flags = Notification.FLAG_AUTO_CANCEL;
-		newNotification.tickerText = msg;
-		newNotification.setLatestEventInfo(getApplicationContext(), getText(R.string.app_name), msg, pendingIntent);
-		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		notificationManager.notify((int) situation._id, newNotification);
+
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		builder.setWhen(situation.time);
+		builder.setSmallIcon(R.drawable.ic_stat_sharing);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) situation._id, i, PendingIntent.FLAG_ONE_SHOT);
+		builder.setContentIntent(pendingIntent);
+		builder.setContentTitle(getText(R.string.app_name));
+		builder.setContentText(msg);
+		builder.setTicker(msg);
+		builder.setGroup("androzic");
+		builder.setAutoCancel(true);
+		builder.setDefaults(Notification.DEFAULT_SOUND);
+		builder.setCategory(NotificationCompat.CATEGORY_SOCIAL);
+		builder.setPriority(NotificationCompat.PRIORITY_LOW);
+		builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE);
+		builder.setColor(getResources().getColor(R.color.theme_accent_color));
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.notify((int) situation._id, builder.build());
 	}
 
 	private void sendMapObjects() throws RemoteException
@@ -467,7 +447,14 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	private void connect()
 	{
-		bindService(new Intent(BaseLocationService.ANDROZIC_LOCATION_SERVICE), locationConnection, BIND_AUTO_CREATE);
+		Intent intent = new Intent(BaseLocationService.ANDROZIC_LOCATION_SERVICE);
+		ResolveInfo ri = getPackageManager().resolveService(intent, 0);
+		// This generally can not happen because plugin can be run only from parent application
+		if (ri == null)
+			return;
+		ServiceInfo service = ri.serviceInfo;
+		intent.setComponent(new ComponentName(service.applicationInfo.packageName, service.name));
+		bindService(intent, locationConnection, BIND_AUTO_CREATE);
 	}
 
 	private void disconnect()
@@ -509,7 +496,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		{
 			if (sharingEnabled)
 			{
-				startForeground(NOTIFICATION_ID, notification);
+				startForeground(NOTIFICATION_ID, getNotification(R.drawable.ic_stat_sharing));
 				startTimer();
 			}
 			isSuspended = false;
@@ -547,32 +534,27 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 		}
 	};
 
-	private void prepareNormalNotification()
+	private Notification getNotification(int icon)
 	{
-		notification.when = 0;
-		notification.icon = R.drawable.ic_stat_sharing;
-		notification.setLatestEventInfo(getApplicationContext(), getText(R.string.pref_sharing_title), getText(R.string.notif_sharing), contentIntent);
-		errorState = false;
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+		builder.setWhen(0);
+		builder.setSmallIcon(icon);
+		builder.setContentIntent(contentIntent);
+		builder.setContentTitle(getText(R.string.pref_sharing_title));
+		builder.setContentText(getText(R.string.notif_sharing));
+		builder.setGroup("androzic");
+		builder.setCategory(NotificationCompat.CATEGORY_SERVICE);
+		builder.setPriority(NotificationCompat.PRIORITY_LOW);
+		builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+		builder.setColor(getResources().getColor(R.color.theme_accent_color));
+		builder.setOngoing(true);
+		return builder.build();
 	}
 
-	@SuppressWarnings("unused")
-	private void showErrorNotification()
+	private void updateNotification(int icon)
 	{
-		if (errorState)
-			return;
-
-		notification.when = System.currentTimeMillis();
-		notification.defaults |= Notification.DEFAULT_SOUND;
-		/*
-		 * Red icon (white): saturation +100, lightness -40 Red icon (grey):
-		 * saturation +100, lightness 0
-		 */
-		// notification.icon = R.drawable.ic_stat_sharing_error;
-		notification.setLatestEventInfo(getApplicationContext(), getText(R.string.pref_sharing_title), getText(R.string.notif_error), contentIntent);
-		NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		nm.notify(NOTIFICATION_ID, notification);
-
-		errorState = true;
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.notify(NOTIFICATION_ID, getNotification(icon));
 	}
 
 	// This is not used in code, but included to demonstrate, how to read
@@ -737,9 +719,9 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 			{
 				switch (status)
 				{
-				// case LocationService.GPS_OFF:
-				// case LocationService.GPS_SEARCHING:
-				// TODO Send lost location status
+					case BaseLocationService.GPS_OFF:
+					case BaseLocationService.GPS_SEARCHING:
+						//TODO Send lost location status
 				}
 			}
 		}

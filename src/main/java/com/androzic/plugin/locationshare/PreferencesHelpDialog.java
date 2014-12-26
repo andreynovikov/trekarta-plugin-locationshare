@@ -22,6 +22,7 @@ package com.androzic.plugin.locationshare;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +37,7 @@ public class PreferencesHelpDialog extends DialogFragment
 		return inflater.inflate(R.layout.dlg_preferences_help, container, false);
 	}
 
+	@NonNull
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState)
 	{
