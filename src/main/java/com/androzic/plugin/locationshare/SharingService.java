@@ -486,7 +486,8 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
 	private void stopTimer()
 	{
-		timer.cancel();
+		if (timer != null)
+			timer.cancel();
 		timer = null;
 	}
 
