@@ -21,14 +21,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="30"
-            android:gravity="right"
+            android:gravity="left"
             android:singleLine="true" />
 
         <TextView
             android:id="@+id/track"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="20"
+            android:layout_weight="10"
             android:gravity="right"
             android:singleLine="true" />
 
@@ -36,7 +36,7 @@
             android:id="@+id/speed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="25"
+            android:layout_weight="30"
             android:gravity="right"
             android:singleLine="true" />
 
@@ -44,7 +44,7 @@
             android:id="@+id/delay"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="25"
+            android:layout_weight="30"
             android:gravity="right"
             android:singleLine="true"
             android:textStyle="bold" />
