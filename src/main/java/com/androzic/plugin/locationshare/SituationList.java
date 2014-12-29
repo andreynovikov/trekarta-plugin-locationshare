@@ -404,7 +404,7 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 					text.setText(speed + " " + sharingService.speedAbbr);
 				}
 				long now = System.currentTimeMillis();
-				long d = 0 - sharingService.timeCorrection - stn.time;
+				long d = stn.time - sharingService.timeCorrection;
 				String delay = (String) DateUtils.getRelativeTimeSpanString(d, now, DateUtils.SECOND_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
 				text = (TextView) v.findViewById(R.id.delay);
 				if (text != null)
