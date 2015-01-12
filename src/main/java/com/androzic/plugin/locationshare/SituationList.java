@@ -391,7 +391,8 @@ public class SituationList extends ActionBarActivity implements OnSharedPreferen
 				{
 					text.setText(distance);
 				}
-				String track = StringFormatter.bearingH(stn.track);
+				//FIXME Should initialize StringFormatter for angles
+				String track = StringFormatter.angleH(stn.track);
 				text = (TextView) v.findViewById(R.id.track);
 				if (text != null)
 				{
