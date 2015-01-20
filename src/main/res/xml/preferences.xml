@@ -15,21 +15,19 @@
         android:title="@string/pref_sharing_user_title"/>
 
     <com.androzic.ui.SeekbarPreference
-        app:defaultValue="@integer/def_sharing_updateinterval"
-        app:format="0"
-        app:max="300"
-        app:min="3"
         android:key="@string/pref_sharing_updateinterval"
         android:text=" s"
-        android:title="@string/pref_sharing_updateinterval_title"/>
+        android:title="@string/pref_sharing_updateinterval_title"
+        android:defaultValue="@integer/def_sharing_updateinterval"
+        app:max="300"
+        app:min="3" />
     <com.androzic.ui.SeekbarPreference
-        app:defaultValue="@integer/def_sharing_timeout"
-        app:format="0"
-        app:max="30"
-        app:min="1"
         android:key="@string/pref_sharing_timeout"
         android:text=" min"
-        android:title="@string/pref_sharing_timeout_title"/>
+        android:title="@string/pref_sharing_timeout_title"
+        android:defaultValue="@integer/def_sharing_timeout"
+        app:max="30"
+        app:min="1" />
 
     <CheckBoxPreference
         android:defaultValue="@bool/def_notifications"
@@ -37,12 +35,12 @@
         android:title="@string/pref_sharing_notifications_title"/>
 
     <com.androzic.ui.SeekbarPreference
-        app:defaultValue="@integer/def_sharing_tagwidth"
-        app:max="20"
-        app:min="5"
         android:key="@string/pref_sharing_tagwidth"
         android:text=" pixels"
-        android:title="@string/pref_sharing_tagwidth_title"/>
+        android:title="@string/pref_sharing_tagwidth_title"
+        android:defaultValue="@integer/def_sharing_tagwidth"
+        app:max="20"
+        app:min="5" />
 
     <afzkl.development.colorpickerview.preference.ColorPickerPreference
         android:defaultValue="@color/usertag"
