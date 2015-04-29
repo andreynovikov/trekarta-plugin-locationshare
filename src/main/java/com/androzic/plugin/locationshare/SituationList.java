@@ -18,7 +18,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.internal.view.SupportMenuInflater;
 import android.support.v7.internal.view.menu.MenuBuilder;
 import android.support.v7.internal.view.menu.MenuPopupHelper;
@@ -46,7 +46,7 @@ import com.androzic.navigation.BaseNavigationService;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
 
-public class SituationList extends ActionBarActivity implements OnSharedPreferenceChangeListener, OnItemClickListener, MenuBuilder.Callback, MenuPresenter.Callback, OnCheckedChangeListener
+public class SituationList extends AppCompatActivity implements OnSharedPreferenceChangeListener, OnItemClickListener, MenuBuilder.Callback, MenuPresenter.Callback, OnCheckedChangeListener
 {
 	private static final String TAG = "SituationList";
 
