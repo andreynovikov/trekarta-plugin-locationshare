@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Time after which user will be displayed as lost</string>
   <string name="pref_sharing_notifications_title">New user notification</string>
   <string name="pref_sharing_tagcolor_title">Цвят на етикета</string>
-  <string name="pref_sharing_tagwidth_title">Размер на етикета</string>
+  <string name="pref_sharing_tagsize_title">Размер на етикета</string>
 </resources>

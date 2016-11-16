@@ -6,5 +6,5 @@
 	<string name="pref_sharing_timeout" translatable="false">sharing_timeout</string>
 	<string name="pref_sharing_notifications" translatable="false">sharing_notifications</string>
 	<string name="pref_sharing_tagcolor" translatable="false">sharing_tagcolor</string>
-	<string name="pref_sharing_tagwidth" translatable="false">sharing_tagwidth</string>
+	<string name="pref_sharing_tagsize" translatable="false">sharing_tagsize</string>
 </resources>

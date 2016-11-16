@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Bu süre sonunda kullanıcı kayıp olarak görüntülenecektir</string>
   <string name="pref_sharing_notifications_title">Yeni kullanıcı bildirimi</string>
   <string name="pref_sharing_tagcolor_title">Etiket rengi</string>
-  <string name="pref_sharing_tagwidth_title">Etiket boyutu</string>
+  <string name="pref_sharing_tagsize_title">Etiket boyutu</string>
 </resources>

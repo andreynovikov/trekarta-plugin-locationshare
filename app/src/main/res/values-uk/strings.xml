@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Час, після якого користувача буде позначено як загубленого</string>
   <string name="pref_sharing_notifications_title">Повідомлення про нового користувача</string>
   <string name="pref_sharing_tagcolor_title">Колір мітки</string>
-  <string name="pref_sharing_tagwidth_title">Розмір мітки</string>
+  <string name="pref_sharing_tagsize_title">Розмір мітки</string>
 </resources>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <integer name="def_sharing_tagwidth">16</integer>
+    <integer name="def_sharing_tagsize">5</integer>
 
 </resources>

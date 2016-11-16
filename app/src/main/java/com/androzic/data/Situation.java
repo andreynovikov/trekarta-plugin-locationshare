@@ -20,23 +20,24 @@
 
 package com.androzic.data;
 
-public class Situation extends Waypoint
-{
-	public double speed;
-	public double track;
-	public long time;
+public class Situation {
+    public double speed;
+    public double track;
+    public long time;
+    public String name;
+    public long id;
+    public double latitude;
+    public double longitude;
+    public boolean silent;
 
-	public Situation()
-	{
-		super();
-		speed = 0;
-		track = 0;
-		time = 0;
-	}
+    public Situation() {
+        speed = 0;
+        track = 0;
+        time = 0;
+    }
 
-	public Situation(String name)
-	{
-		this();
-		this.name = name;
-	}
+    public Situation(String name) {
+        this();
+        this.name = name;
+    }
 }

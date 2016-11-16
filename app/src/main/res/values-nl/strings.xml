@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Tijd waarna gebruiker zal worden weergegeven als verloren</string>
   <string name="pref_sharing_notifications_title">Melding voor nieuwe gebruiker</string>
   <string name="pref_sharing_tagcolor_title">Label kleur</string>
-  <string name="pref_sharing_tagwidth_title">Label grootte</string>
+  <string name="pref_sharing_tagsize_title">Label grootte</string>
 </resources>

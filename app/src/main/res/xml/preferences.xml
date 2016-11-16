@@ -1,53 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-                  xmlns:app="http://schemas.android.com/apk/res-auto"
-                  android:title="@string/pref_sharing_title">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:title="@string/pref_sharing_title">
 
     <EditTextPreference
         android:key="@string/pref_sharing_session"
         android:maxLength="60"
         android:singleLine="true"
-        android:title="@string/pref_sharing_session_title"/>
+        android:title="@string/pref_sharing_session_title" />
     <EditTextPreference
         android:key="@string/pref_sharing_user"
         android:maxLength="60"
         android:singleLine="true"
-        android:title="@string/pref_sharing_user_title"/>
+        android:title="@string/pref_sharing_user_title" />
 
-    <com.androzic.ui.SeekbarPreference
-        android:key="@string/pref_sharing_updateinterval"
-        android:text=" s"
-        android:title="@string/pref_sharing_updateinterval_title"
-        android:defaultValue="@integer/def_sharing_updateinterval"
-        app:max="300"
-        app:min="3" />
-    <com.androzic.ui.SeekbarPreference
-        android:key="@string/pref_sharing_timeout"
-        android:text=" min"
-        android:title="@string/pref_sharing_timeout_title"
-        android:defaultValue="@integer/def_sharing_timeout"
-        app:max="30"
-        app:min="1" />
+    <org.anasthase.androidseekbarpreference.SeekBarPreference
+            android:defaultValue="@integer/def_sharing_updateinterval"
+            android:key="@string/pref_sharing_updateinterval"
+            android:title="@string/pref_sharing_updateinterval_title"
+            app:maxValue="300"
+            app:format="%d s"
+            app:stepValue="3"
+            app:minValue="3" />
+
+    <org.anasthase.androidseekbarpreference.SeekBarPreference
+            android:defaultValue="@integer/def_sharing_timeout"
+            android:key="@string/pref_sharing_timeout"
+            android:title="@string/pref_sharing_timeout_title"
+            app:maxValue="30"
+            app:format="%d min"
+            app:minValue="1" />
 
     <CheckBoxPreference
         android:defaultValue="@bool/def_notifications"
         android:key="@string/pref_sharing_notifications"
-        android:title="@string/pref_sharing_notifications_title"/>
+        android:title="@string/pref_sharing_notifications_title" />
 
-    <com.androzic.ui.SeekbarPreference
-        android:key="@string/pref_sharing_tagwidth"
-        android:text=" pixels"
-        android:title="@string/pref_sharing_tagwidth_title"
-        android:defaultValue="@integer/def_sharing_tagwidth"
-        app:max="20"
-        app:min="5" />
+    <org.anasthase.androidseekbarpreference.SeekBarPreference
+        android:defaultValue="@integer/def_sharing_tagsize"
+        android:key="@string/pref_sharing_tagsize"
+        android:title="@string/pref_sharing_tagsize_title"
+        app:format="%d"
+        app:maxValue="6"
+        app:minValue="1" />
 
-    <afzkl.development.colorpickerview.preference.ColorPickerPreference
+    <com.kizitonwose.colorpreference.ColorPreference
         android:defaultValue="@color/usertag"
-        android:dialogTitle="@string/pref_sharing_tagcolor_title"
         android:key="@string/pref_sharing_tagcolor"
-        android:title="@string/pref_sharing_tagcolor_title"
-        app:colorPickerSliderColor="@color/theme_accent_color"
-        app:showDialogTitle="true" />
-
+        android:title="@string/pref_sharing_tagcolor_title" />
 </PreferenceScreen>

@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Tempo dopo il quale l\'utente verrà visualizzato come disattivato</string>
   <string name="pref_sharing_notifications_title">Notifica di nuovo utente</string>
   <string name="pref_sharing_tagcolor_title">Colore etichetta</string>
-  <string name="pref_sharing_tagwidth_title">Dimensioni etichetta</string>
+  <string name="pref_sharing_tagsize_title">Dimensioni etichetta</string>
 </resources>

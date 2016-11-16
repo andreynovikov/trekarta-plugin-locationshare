@@ -1,24 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.androzic.plugin.locationshare">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
     <uses-permission android:name="com.androzic.permission.RECEIVE_LOCATION" />
     <uses-permission android:name="com.androzic.permission.NAVIGATION" />
     <uses-permission android:name="com.androzic.permission.READ_PREFERENCES" />
     <uses-permission android:name="com.androzic.permission.READ_MAP_DATA" />
     <uses-permission android:name="com.androzic.permission.WRITE_MAP_DATA" />
 
+    <uses-permission android:name="mobi.maptrek.permission.RECEIVE_LOCATION" />
+    <uses-permission android:name="mobi.maptrek.permission.READ_MAP_DATA" />
+    <uses-permission android:name="mobi.maptrek.permission.WRITE_MAP_DATA" />
+
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Application" >
+        android:theme="@style/Theme.Application.Light.DarkActionBar"
+        tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name=".SituationList"
             android:label="@string/pref_sharing_title" >
             <intent-filter>
                 <action android:name="com.androzic.plugins.view" />
+                <action android:name="mobi.maptrek.plugins.tool" />
             </intent-filter>
         </activity>
         <activity
@@ -31,10 +39,13 @@
 
         <service android:name=".SharingService" />
 
-        <receiver android:name=".Executor" >
+        <receiver android:name=".Executor"
+            tools:ignore="ExportedReceiver">
             <intent-filter>
                 <action android:name="com.androzic.plugins.action.INITIALIZE" />
                 <action android:name="com.androzic.plugins.action.FINALIZE" />
+                <action android:name="mobi.maptrek.plugins.action.INITIALIZE" />
+                <action android:name="mobi.maptrek.plugins.action.FINALIZE" />
             </intent-filter>
         </receiver>
     </application>

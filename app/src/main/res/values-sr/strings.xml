@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Vrijeme posle koga će korisnik biti prikazan kao izgubljen</string>
   <string name="pref_sharing_notifications_title">Obavještenje za novog korisnika</string>
   <string name="pref_sharing_tagcolor_title">Boja oznake</string>
-  <string name="pref_sharing_tagwidth_title">Veličina oznake</string>
+  <string name="pref_sharing_tagsize_title">Veličina oznake</string>
 </resources>

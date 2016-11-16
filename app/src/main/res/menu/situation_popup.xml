@@ -3,11 +3,11 @@
 
     <item
         android:id="@+id/action_view"
-        android:icon="@drawable/ic_visibility_white_24dp"
+        android:icon="@drawable/ic_visibility"
         android:title="@string/menu_view"/>
     <item
         android:id="@+id/action_navigate"
-        android:icon="@drawable/ic_navigation_white_24dp"
+        android:icon="@drawable/ic_navigation"
         android:title="@string/menu_navigate"/>
 
 </menu>

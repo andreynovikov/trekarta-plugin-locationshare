@@ -16,8 +16,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    useLibrary 'org.apache.http.legacy'
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'org.anasthase:android-seekbar-preference:1.1'
+    compile 'com.github.kizitonwose.colorpreference:support:1.0.2'
 }

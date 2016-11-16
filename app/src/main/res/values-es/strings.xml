@@ -22,5 +22,5 @@
   <string name="pref_sharing_timeout_summary">Tiempo tras el cual se mostrará al usuario como perdido</string>
   <string name="pref_sharing_notifications_title">Notificación de nuevo usuario</string>
   <string name="pref_sharing_tagcolor_title">Color de etiqueta</string>
-  <string name="pref_sharing_tagwidth_title">Tamaño de etiqueta</string>
+  <string name="pref_sharing_tagsize_title">Tamaño de etiqueta</string>
 </resources>
