@@ -23,4 +23,8 @@
   <string name="pref_sharing_notifications_title">Уведомление о новом пользователе</string>
   <string name="pref_sharing_tagcolor_title">Цвет метки</string>
   <string name="pref_sharing_tagsize_title">Размер метки</string>
+  <string name="cancel">Отменить</string>
+  <string name="menu_help">Помощь</string>
+  <string name="ok">Ok</string>
+  <string name="msgPermissionsRationale">Необходимо предоставить права, чтобы отображать метки на карте</string>
 </resources>
