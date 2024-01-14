@@ -8,7 +8,8 @@
   <string name="notif_sharing">Androzic обменивается местоположением в реальном времени</string>
   <string name="notif_error">Androzic не может передать местоположение</string>
   <string name="notif_newsession">%s присоединился к сессии</string>
-  <string name="menu_preferences">Настройки</string>
+    <string name="notif_channel">Текущие события</string>
+    <string name="menu_preferences">Настройки</string>
   <string name="menu_view">Показать</string>
   <string name="menu_navigate">Начать движение</string>
   <string name="pref_sharing_title">Обмен местоположением</string>

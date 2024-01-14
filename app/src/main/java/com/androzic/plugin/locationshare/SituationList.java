@@ -1,29 +1,21 @@
 package com.androzic.plugin.locationshare;
 
-import android.annotation.TargetApi;
-import android.app.ActionBar;
-import android.app.Activity;
+import android.Manifest;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.v7.view.menu.MenuPopupHelper;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,40 +29,50 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.ListView;
-import android.widget.PopupMenu;
-import android.widget.Switch;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
+
 import com.androzic.data.Situation;
+import com.androzic.plugin.locationshare.databinding.ActUserlistBinding;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class SituationList extends Activity implements OnSharedPreferenceChangeListener, OnItemClickListener, MenuItem.OnMenuItemClickListener, OnCheckedChangeListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
+public class SituationList extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, OnItemClickListener, MenuItem.OnMenuItemClickListener, OnCheckedChangeListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
     private static final String TAG = "SituationList";
     private static final int PERMISSIONS_REQUEST = 1001;
 
-    private static String[] MAPTREK_PERMISSIONS = {"mobi.maptrek.permission.RECEIVE_LOCATION",
-            "mobi.maptrek.permission.WRITE_MAP_DATA"};
+    private static final String[] MAPTREK_PERMISSIONS = {
+            "mobi.maptrek.permission.RECEIVE_LOCATION",
+            "mobi.maptrek.permission.WRITE_MAP_DATA"
+    };
 
-    private static String[] ANDROZIC_PERMISSIONS = {"com.androzic.permission.RECEIVE_LOCATION",
-            "com.androzic.permission.NAVIGATION", "com.androzic.permission.READ_PREFERENCES",
-            "com.androzic.permission.READ_MAP_DATA", "com.androzic.permission.WRITE_MAP_DATA"};
+    private static final String[] ANDROZIC_PERMISSIONS = {
+            "com.androzic.permission.RECEIVE_LOCATION",
+            "com.androzic.permission.NAVIGATION",
+            "com.androzic.permission.READ_PREFERENCES",
+            "com.androzic.permission.READ_MAP_DATA",
+            "com.androzic.permission.WRITE_MAP_DATA"
+    };
 
-    private ListView listView;
-    private TextView emptyView;
+    private ActUserlistBinding binding;
     private SituationListAdapter adapter;
     public SharingService sharingService = null;
 
     private Timer timer;
     // private int timeoutInterval = 600; // 10 minutes (default)
 
-    private Switch enableSwitch;
+    private SwitchCompat enableSwitch;
 
     private int selectedPosition = -1;
     private Drawable selectedBackground;
@@ -82,24 +84,26 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.act_userlist);
 
-        ActionBar actionBar = getActionBar();
+        binding = ActUserlistBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        setSupportActionBar(binding.toolbar);
+
+        ActionBar actionBar = getSupportActionBar();
         if (actionBar != null)
             actionBar.setDisplayHomeAsUpEnabled(true);
 
-        listView = (ListView) findViewById(android.R.id.list);
-        emptyView = (TextView) findViewById(android.R.id.empty);
-        listView.setEmptyView(emptyView);
+        binding.list.setEmptyView(binding.empty);
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-        accentColor = getResources().getColor(R.color.theme_accent_color);
+        accentColor = getResources().getColor(R.color.seed, getTheme());
 
         adapter = new SituationListAdapter(this);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(this);
+        binding.list.setAdapter(adapter);
+        binding.list.setOnItemClickListener(this);
 
         mMapTrek = sharedPreferences.getBoolean("maptrek", false);
         mPermissions = mMapTrek ? MAPTREK_PERMISSIONS : ANDROZIC_PERMISSIONS;
@@ -130,12 +134,9 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
         inflater.inflate(R.menu.preferences, menu);
 
         // Get widget's instance
-        menu.findItem(R.id.action_enable).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        enableSwitch = (Switch) menu.findItem(R.id.action_enable).getActionView();
+        menu.findItem(R.id.action_enable).setActionView(R.layout.switch_action);
+        enableSwitch = (SwitchCompat) menu.findItem(R.id.action_enable).getActionView();
         enableSwitch.setOnCheckedChangeListener(this);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            menu.findItem(R.id.action_settings).getIcon().setTint(getResources().getColor(android.R.color.primary_text_dark));
-        }
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         onSharedPreferenceChanged(sharedPreferences, null);
@@ -148,13 +149,13 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_settings:
-                startActivity(new Intent(this, Preferences.class));
-                return true;
-            case android.R.id.home:
-                finish();
-                return true;
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            startActivity(new Intent(this, Preferences.class));
+            return true;
+        } else if (id == android.R.id.home) {
+            finish();
+            return true;
         }
         return false;
     }
@@ -170,41 +171,31 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
         popupMenu.inflate(R.menu.situation_popup);
         popupMenu.setOnMenuItemClickListener(this);
         popupMenu.setOnDismissListener(this);
-        try {
-            Field mFieldPopup = popupMenu.getClass().getDeclaredField("mPopup");
-            mFieldPopup.setAccessible(true);
-            MenuPopupHelper mPopup = (MenuPopupHelper) mFieldPopup.get(popupMenu);
-            mPopup.setForceShowIcon(true);
-        } catch (Exception ignore) {
-        }
         popupMenu.show();
     }
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         if (isChecked && !isServiceRunning()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                boolean notGranted = false;
-                for (String permission : mPermissions)
-                    notGranted |= checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED;
-                if (notGranted) {
-                    requestPermission();
-                } else {
-                    start();
-                }
+            boolean notGranted = false;
+            for (String permission : mPermissions)
+                notGranted |= checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED;
+            if (notGranted) {
+                requestPermission();
             } else {
                 start();
             }
         } else if (!isChecked && isServiceRunning()) {
             disconnect();
             stopService(new Intent(this, SharingService.class));
-            getActionBar().setSubtitle("");
-            emptyView.setText(R.string.msg_needs_enable);
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null)
+                actionBar.setSubtitle("");
+            binding.empty.setText(R.string.msg_needs_enable);
             adapter.notifyDataSetChanged();
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
     private void requestPermission() {
         boolean shouldShow = false;
         for (String permission : mPermissions)
@@ -212,18 +203,8 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
         if (shouldShow) {
             new AlertDialog.Builder(this)
                     .setMessage(getString(R.string.msgPermissionsRationale))
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            requestPermissions(mPermissions, PERMISSIONS_REQUEST);
-                        }
-                    })
-                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            finish();
-                        }
-                    })
+                    .setPositiveButton(R.string.ok, (dialog, which) -> requestPermissions(mPermissions, PERMISSIONS_REQUEST))
+                    .setNegativeButton(R.string.cancel, (dialog, which) -> finish())
                     .create()
                     .show();
         } else {
@@ -244,6 +225,7 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
             for (int result : grantResults) {
                 if (result != PackageManager.PERMISSION_GRANTED) {
                     granted = false;
+                    break;
                 }
             }
             if (granted) {
@@ -257,7 +239,7 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
     }
 
     private void start() {
-        emptyView.setText(R.string.msg_no_users);
+        binding.empty.setText(R.string.msg_no_users);
         startService(new Intent(this, SharingService.class));
         connect();
     }
@@ -294,30 +276,30 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
     public boolean onMenuItemClick(MenuItem item) {
         Situation situation = adapter.getItem(lastSelectedPosition);
 
-        switch (item.getItemId()) {
-            case R.id.action_view:
-                Intent i = new Intent(mMapTrek ? "mobi.maptrek.action.CENTER_ON_COORDINATES" : "com.androzic.CENTER_ON_COORDINATES");
-                i.putExtra("lat", situation.latitude);
-                i.putExtra("lon", situation.longitude);
-                if (mMapTrek) {
-                    startActivity(i);
-                } else {
-                    sendBroadcast(i);
-                }
-                finish();
-                return true;
-            case R.id.action_navigate:
-                Intent intent = new Intent(mMapTrek ? "mobi.maptrek.action.NAVIGATE_TO_OBJECT" : "com.androzic.navigateMapObjectWithId");
-                intent.putExtra("id", situation.id);
-                if (mMapTrek) {
-                    startActivity(intent);
-                } else {
-                    intent = getExplicitIntent(intent);
-                    if (intent != null)
-                        startService(intent);
-                }
-                finish();
-                return true;
+        int id = item.getItemId();
+        if (id == R.id.action_view) {
+            Intent i = new Intent(mMapTrek ? "mobi.maptrek.action.CENTER_ON_COORDINATES" : "com.androzic.CENTER_ON_COORDINATES");
+            i.putExtra("lat", situation.latitude);
+            i.putExtra("lon", situation.longitude);
+            if (mMapTrek) {
+                startActivity(i);
+            } else {
+                sendBroadcast(i);
+            }
+            finish();
+            return true;
+        } else if (id == R.id.action_navigate) {
+            Intent intent = new Intent(mMapTrek ? "mobi.maptrek.action.NAVIGATE_TO_OBJECT" : "com.androzic.navigateMapObjectWithId");
+            intent.putExtra("id", situation.id);
+            if (mMapTrek) {
+                startActivity(intent);
+            } else {
+                intent = getExplicitIntent(intent);
+                if (intent != null)
+                    startService(intent);
+            }
+            finish();
+            return true;
         }
         return false;
     }
@@ -325,37 +307,37 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
     @Override
     public void onDismiss(PopupMenu popupMenu) {
         selectedPosition = -1;
-        if (listView != null) {
-            View v = listView.findViewWithTag("selected");
-            if (v != null) {
-                v.setBackground(selectedBackground);
-                v.setTag(null);
-            }
+        View v = binding.list.findViewWithTag("selected");
+        if (v != null) {
+            v.setBackground(selectedBackground);
+            v.setTag(null);
         }
     }
 
-    private ServiceConnection sharingConnection = new ServiceConnection() {
+    private final ServiceConnection sharingConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             sharingService = ((SharingService.LocalBinder) service).getService();
-            registerReceiver(sharingReceiver, new IntentFilter(SharingService.BROADCAST_SITUATION_CHANGED));
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    getActionBar().setSubtitle(sharingService.user + " \u2208 " + sharingService.session);
-                    adapter.notifyDataSetChanged();
-                }
+            ContextCompat.registerReceiver(SituationList.this, sharingReceiver, new IntentFilter(SharingService.BROADCAST_SITUATION_CHANGED), ContextCompat.RECEIVER_EXPORTED);
+            runOnUiThread(() -> {
+                ActionBar actionBar = getSupportActionBar();
+                if (actionBar != null)
+                    actionBar.setSubtitle(sharingService.user + " ∈ " + sharingService.session);
+                adapter.notifyDataSetChanged();
             });
             Log.d(TAG, "Sharing service connected");
         }
 
         public void onServiceDisconnected(ComponentName className) {
             sharingService = null;
-            getActionBar().setSubtitle("");
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null)
+                actionBar.setSubtitle("");
             adapter.notifyDataSetChanged();
             Log.d(TAG, "Sharing service disconnected");
         }
     };
 
-    private BroadcastReceiver sharingReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver sharingReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -370,8 +352,8 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
     };
 
     public class SituationListAdapter extends BaseAdapter {
-        private LayoutInflater mInflater;
-        private int mItemLayout;
+        private final LayoutInflater mInflater;
+        private final int mItemLayout;
 
         SituationListAdapter(Context context) {
             mItemLayout = R.layout.situation_list_item;
@@ -483,10 +465,10 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
         String user = sharedPreferences.getString(getString(R.string.pref_sharing_user), "");
         if (!session.trim().equals("") && !user.trim().equals("")) {
             enableSwitch.setEnabled(true);
-            emptyView.setText(R.string.msg_needs_enable);
+            binding.empty.setText(R.string.msg_needs_enable);
         } else {
             enableSwitch.setEnabled(false);
-            emptyView.setText(R.string.msg_needs_setup);
+            binding.empty.setText(R.string.msg_needs_setup);
         }
 
         if (adapter != null)
@@ -520,11 +502,9 @@ public class SituationList extends Activity implements OnSharedPreferenceChangeL
 
     class UpdateTask extends TimerTask {
         public void run() {
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    if (adapter != null && selectedPosition == -1)
-                        adapter.notifyDataSetChanged();
-                }
+            runOnUiThread(() -> {
+                if (adapter != null && selectedPosition == -1)
+                    adapter.notifyDataSetChanged();
             });
         }
     }

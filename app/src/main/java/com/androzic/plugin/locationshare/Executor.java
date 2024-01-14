@@ -3,8 +3,9 @@ package com.androzic.plugin.locationshare;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.preference.PreferenceManager;
 import android.util.Log;
+
+import androidx.preference.PreferenceManager;
 
 public class Executor extends BroadcastReceiver {
     @Override
