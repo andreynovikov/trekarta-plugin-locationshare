@@ -31,7 +31,6 @@
             android:theme="@style/Theme.Application"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.androzic.plugins.view" />
                 <action android:name="mobi.maptrek.plugins.tool" />
             </intent-filter>
         </activity>
@@ -54,8 +53,6 @@
             tools:ignore="ExportedReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.androzic.plugins.action.INITIALIZE" />
-                <action android:name="com.androzic.plugins.action.FINALIZE" />
                 <action android:name="mobi.maptrek.plugins.action.INITIALIZE" />
                 <action android:name="mobi.maptrek.plugins.action.FINALIZE" />
             </intent-filter>

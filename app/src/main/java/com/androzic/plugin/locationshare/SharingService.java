@@ -1,3 +1,20 @@
+/*
+ * Copyright 2024 Andrey Novikov
+ *
+ * This program is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with
+ * this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ */
+
 package com.androzic.plugin.locationshare;
 
 import android.app.Notification;
@@ -25,10 +42,8 @@ import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
-import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.location.Location;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
@@ -63,6 +78,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import mobi.maptrek.location.ILocationRemoteService;
 import mobi.maptrek.provider.DataContract;
 
 public class SharingService extends Service implements OnSharedPreferenceChangeListener {
@@ -82,10 +98,9 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     private static final String TAG = "LocationSharing";
     private static final int NOTIFICATION_ID = 24164;
 
-    public static final String BROADCAST_SITUATION_CHANGED = "com.androzic.sharingSituationChanged";
+    public static final String BROADCAST_SITUATION_CHANGED = "com.androzic.plugin.locationshare.SituationChanged";
 
-    private mobi.maptrek.location.ILocationRemoteService mMapTrekLocationService = null;
-    private com.androzic.location.ILocationRemoteService mAndrozicLocationService = null;
+    private ILocationRemoteService mMapTrekLocationService = null;
 
     private boolean notifyNewSituation = false;
 
@@ -113,9 +128,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     // Drawing resources
     private Paint linePaint;
     private Paint textPaint;
-    private Paint textFillPaint;
     private int pointWidth;
-    private boolean mMapTrek;
     private Uri mMapObjectsUri;
     private String mMapObjectIdSelection;
     private String[] mMapObjectColumns;
@@ -159,16 +172,9 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         textPaint.setTextSize(20);
         textPaint.setTypeface(Typeface.SANS_SERIF);
         textPaint.setColor(tagColor);
-        textFillPaint = new Paint();
-        textFillPaint.setAntiAlias(false);
-        textFillPaint.setStrokeWidth(1);
-        textFillPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        textFillPaint.setColor(resources.getColor(R.color.usertagwithalpha, getTheme()));
 
         // Initialize preferences
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        mMapTrek = sharedPreferences.getBoolean("maptrek", false);
-
         onSharedPreferenceChanged(sharedPreferences, getString(R.string.pref_sharing_session));
         onSharedPreferenceChanged(sharedPreferences, getString(R.string.pref_sharing_user));
         onSharedPreferenceChanged(sharedPreferences, getString(R.string.pref_sharing_updateinterval));
@@ -179,36 +185,21 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         // Connect to data provider
-        if (mMapTrek) {
-            contentProvider = getContentResolver().acquireContentProviderClient(DataContract.MAPOBJECTS_URI);
-            mMapObjectsUri = DataContract.MAPOBJECTS_URI;
-            mMapObjectIdSelection = DataContract.MAPOBJECT_ID_SELECTION;
-            mMapObjectColumns = DataContract.MAPOBJECT_COLUMNS;
-            mMapObjectNameColumn = DataContract.MAPOBJECT_NAME_COLUMN;
-            mMapObjectLatitudeColumn = DataContract.MAPOBJECT_LATITUDE_COLUMN;
-            mMapObjectLongitudeColumn = DataContract.MAPOBJECT_LONGITUDE_COLUMN;
-            mMapObjectBitmapColumn = DataContract.MAPOBJECT_BITMAP_COLUMN;
-            mMapObjectColorColumn = DataContract.MAPOBJECT_COLOR_COLUMN;
-            speedFactor = 3.6f;
-            speedAbbr = "kmh";
-            StringFormatter.speedFactor = 3.6f;
-            StringFormatter.speedAbbr = "kmh";
-            // Register location service status receiver
-            ContextCompat.registerReceiver(this, broadcastReceiver, new IntentFilter("mobi.maptrek.locatingStatusChanged"), ContextCompat.RECEIVER_EXPORTED);
-        } else {
-            contentProvider = getContentResolver().acquireContentProviderClient(com.androzic.provider.DataContract.MAPOBJECTS_URI);
-            mMapObjectsUri = com.androzic.provider.DataContract.MAPOBJECTS_URI;
-            mMapObjectIdSelection = com.androzic.provider.DataContract.MAPOBJECT_ID_SELECTION;
-            mMapObjectColumns = com.androzic.provider.DataContract.MAPOBJECT_COLUMNS;
-            mMapObjectNameColumn = com.androzic.provider.DataContract.MAPOBJECT_NAME_COLUMN;
-            mMapObjectLatitudeColumn = com.androzic.provider.DataContract.MAPOBJECT_LATITUDE_COLUMN;
-            mMapObjectLongitudeColumn = com.androzic.provider.DataContract.MAPOBJECT_LONGITUDE_COLUMN;
-            mMapObjectBitmapColumn = com.androzic.provider.DataContract.MAPOBJECT_BITMAP_COLUMN;
-            mMapObjectColorColumn = com.androzic.provider.DataContract.MAPOBJECT_TEXTCOLOR_COLUMN;
-            readAndrozicPreferences();
-            // Register location service status receiver
-            ContextCompat.registerReceiver(this, broadcastReceiver, new IntentFilter("com.androzic.locatingStatusChanged"), ContextCompat.RECEIVER_EXPORTED);
-        }
+        contentProvider = getContentResolver().acquireContentProviderClient(DataContract.MAPOBJECTS_URI);
+        mMapObjectsUri = DataContract.MAPOBJECTS_URI;
+        mMapObjectIdSelection = DataContract.MAPOBJECT_ID_SELECTION;
+        mMapObjectColumns = DataContract.MAPOBJECT_COLUMNS;
+        mMapObjectNameColumn = DataContract.MAPOBJECT_NAME_COLUMN;
+        mMapObjectLatitudeColumn = DataContract.MAPOBJECT_LATITUDE_COLUMN;
+        mMapObjectLongitudeColumn = DataContract.MAPOBJECT_LONGITUDE_COLUMN;
+        mMapObjectBitmapColumn = DataContract.MAPOBJECT_BITMAP_COLUMN;
+        mMapObjectColorColumn = DataContract.MAPOBJECT_COLOR_COLUMN;
+        speedFactor = 3.6f;
+        speedAbbr = "kmh";
+        StringFormatter.speedFactor = 3.6f;
+        StringFormatter.speedAbbr = "kmh";
+        // Register location service status receiver
+        ContextCompat.registerReceiver(this, broadcastReceiver, new IntentFilter("mobi.maptrek.locatingStatusChanged"), ContextCompat.RECEIVER_EXPORTED);
 
         if (contentProvider == null) {
             stopSelf();
@@ -325,7 +316,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
                                         s.time = situation.getLong("ftime");
                                     }
                                 }
-                                sendBroadcast(new Intent(BROADCAST_SITUATION_CHANGED));
                                 finishSituationsUpdate(true);
                             } catch (JSONException e) {
                                 throw new RuntimeException(e);
@@ -384,7 +374,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         builder.setContentTitle(getText(R.string.app_name));
         builder.setContentText(msg);
         builder.setTicker(msg);
-        builder.setGroup(mMapTrek ? "maptrek" : "androzic");
+        builder.setGroup("maptrek");
         builder.setAutoCancel(true);
         builder.setDefaults(Notification.DEFAULT_SOUND);
         //builder.setCategory(Notification.CATEGORY_SOCIAL);
@@ -425,53 +415,18 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
     private byte[] getSituationBitmap(Situation situation) {
         Bitmap b;
-        if (mMapTrek) {
-            b = Bitmap.createBitmap(pointWidth * 44, pointWidth * 44, Config.ARGB_8888);
-            Canvas bc = new Canvas(b);
-            linePaint.setAlpha(situation.silent ? 128 : 255);
-            bc.translate(pointWidth * 22, pointWidth * 22);
-            bc.drawCircle(0, 0, pointWidth, linePaint);
-            bc.drawCircle(0, 0, pointWidth * 6, linePaint);
-            bc.save();
-            bc.rotate((float) situation.track, 0, 0);
-            // https://graphsketch.com/?eqn1_color=1&eqn1_eqn=log(x%2F3.6*2%2B1)&eqn2_color=2&eqn2_eqn=&eqn3_color=3&eqn3_eqn=&eqn4_color=4&eqn4_eqn=&eqn5_color=5&eqn5_eqn=&eqn6_color=6&eqn6_eqn=&x_min=-20&x_max=300&y_min=-2&y_max=3&x_tick=10&y_tick=1&x_label_freq=5&y_label_freq=1&do_grid=0&do_grid=1&bold_labeled_lines=0&bold_labeled_lines=1&line_width=4&image_w=850&image_h=525
-            int h = (int) Math.round(Math.log10(situation.speed * 2 + 1) * pointWidth * 6);
-            bc.drawLine(0, -6 * pointWidth, 0, -6 * pointWidth - h, linePaint);
-            bc.restore();
-        } else {
-            Rect textRect = new Rect();
-            String tag = String.valueOf(Math.round(situation.speed * speedFactor)) + "  " + String.valueOf(Math.round(situation.track));
-            textPaint.getTextBounds(tag, 0, tag.length(), textRect);
-            Rect rect1 = new Rect();
-            textPaint.getTextBounds(situation.name, 0, situation.name.length(), rect1);
-            textRect.union(rect1);
-            int textHeight = textRect.height();
-            textRect.inset(0, -(textHeight + 3) / 2);
-            textRect.inset(-2, -2);
-            int offset = pointWidth * 3;
-            int width = textRect.width() + offset + 3;
-            int height = textRect.height() + offset + 3;
-
-            b = Bitmap.createBitmap(width * 2, height * 2, Config.ARGB_8888);
-            Canvas bc = new Canvas(b);
-
-            linePaint.setAlpha(situation.silent ? 128 : 255);
-            textPaint.setAlpha(situation.silent ? 128 : 255);
-
-            bc.translate(width, height);
-            int half = pointWidth >> 1;
-            Rect tagRect = new Rect(-half, -half, +half, +half);
-            bc.drawRect(tagRect, linePaint);
-            bc.drawLine(0, 0, offset, -offset, linePaint);
-            textRect.offsetTo(offset + 3, -offset - textHeight * 2 - 5);
-            bc.drawRect(textRect, textFillPaint);
-            bc.drawText(tag, offset + 5, -offset, textPaint);
-            bc.drawText(situation.name, offset + 5, -offset - textHeight - 3, textPaint);
-            bc.save();
-            bc.rotate((float) situation.track, 0, 0);
-            bc.drawLine(0, 0, 0, -pointWidth * 2, linePaint);
-            bc.restore();
-        }
+        b = Bitmap.createBitmap(pointWidth * 44, pointWidth * 44, Config.ARGB_8888);
+        Canvas bc = new Canvas(b);
+        linePaint.setAlpha(situation.silent ? 128 : 255);
+        bc.translate(pointWidth * 22, pointWidth * 22);
+        bc.drawCircle(0, 0, pointWidth, linePaint);
+        bc.drawCircle(0, 0, pointWidth * 6, linePaint);
+        bc.save();
+        bc.rotate((float) situation.track, 0, 0);
+        // https://graphsketch.com/?eqn1_color=1&eqn1_eqn=log(x%2F3.6*2%2B1)&eqn2_color=2&eqn2_eqn=&eqn3_color=3&eqn3_eqn=&eqn4_color=4&eqn4_eqn=&eqn5_color=5&eqn5_eqn=&eqn6_color=6&eqn6_eqn=&x_min=-20&x_max=300&y_min=-2&y_max=3&x_tick=10&y_tick=1&x_label_freq=5&y_label_freq=1&do_grid=0&do_grid=1&bold_labeled_lines=0&bold_labeled_lines=1&line_width=4&image_w=850&image_h=525
+        int h = (int) Math.round(Math.log10(situation.speed * 2 + 1) * pointWidth * 6);
+        bc.drawLine(0, -6 * pointWidth, 0, -6 * pointWidth - h, linePaint);
+        bc.restore();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         b.compress(Bitmap.CompressFormat.PNG, 100, stream);
@@ -500,7 +455,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     }
 
     private void connect() {
-        Intent intent = new Intent(mMapTrek ? "mobi.maptrek.location" : "com.androzic.location");
+        Intent intent = new Intent("mobi.maptrek.location");
         ResolveInfo ri = getPackageManager().resolveService(intent, 0);
         // This generally can not happen because plugin can be run only from parent application
         if (ri == null)
@@ -519,15 +474,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
             }
             unbindService(mLocationConnection);
             mMapTrekLocationService = null;
-        }
-        if (mAndrozicLocationService != null) {
-            try {
-                mAndrozicLocationService.unregisterCallback(mAndrozicLocationCallback);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            unbindService(mLocationConnection);
-            mAndrozicLocationService = null;
         }
     }
 
@@ -553,12 +499,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
             String action = intent.getAction();
             Log.e(TAG, "Broadcast: " + action);
             if (action.equals("com.androzic.locatingStatusChanged")) {
-                boolean isLocating = false;
-                try {
-                    isLocating = mAndrozicLocationService != null && mAndrozicLocationService.isLocating();
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
             }
         }
     };
@@ -572,7 +512,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         builder.setContentIntent(contentIntent);
         builder.setContentTitle(getText(R.string.pref_sharing_title));
         builder.setContentText(getText(R.string.notif_sharing));
-        builder.setGroup(mMapTrek ? "maptrek" : "androzic");
+        builder.setGroup("maptrek");
         if (Build.VERSION.SDK_INT >= 28)
             builder.setCategory(Notification.CATEGORY_NAVIGATION);
         else
@@ -644,17 +584,13 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         } else if (getString(R.string.pref_sharing_notifications).equals(key)) {
             notifyNewSituation = sharedPreferences.getBoolean(key, getResources().getBoolean(R.bool.def_notifications));
         } else if (getString(R.string.pref_sharing_tagcolor).equals(key)) {
-            linePaint.setColor(sharedPreferences.getInt(key, getResources().getColor(R.color.usertag)));
-            textPaint.setColor(sharedPreferences.getInt(key, getResources().getColor(R.color.usertag)));
+            @ColorInt int color = getResources().getColor(R.color.usertag, getTheme());
+            linePaint.setColor(sharedPreferences.getInt(key, color));
+            textPaint.setColor(sharedPreferences.getInt(key, color));
         } else if (getString(R.string.pref_sharing_tagsize).equals(key)) {
             int width = sharedPreferences.getInt(key, getResources().getInteger(R.integer.def_sharing_tagsize));
-            if (mMapTrek) {
-                linePaint.setStrokeWidth(width * 2);
-                pointWidth = width;
-            } else {
-                textPaint.setTextSize(width * 10);
-                pointWidth = width * 6;
-            }
+            linePaint.setStrokeWidth(width * 2);
+            pointWidth = width;
         } else if (getString(R.string.pref_sharing_timeout).equals(key)) {
             timeoutInterval = sharedPreferences.getInt(key, getResources().getInteger(R.integer.def_sharing_timeout)) * 60000;
         }
@@ -682,29 +618,18 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     private final ServiceConnection mLocationConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.e(TAG, "onServiceConnected(" + className.getPackageName() + ")");
-            if ("mobi.maptrek".equals(className.getPackageName())) {
-                mMapTrekLocationService = mobi.maptrek.location.ILocationRemoteService.Stub.asInterface(service);
-                try {
-                    mMapTrekLocationService.registerCallback(mMapTrekLocationCallback);
-                    Log.d(TAG, "Location service connected");
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                mAndrozicLocationService = com.androzic.location.ILocationRemoteService.Stub.asInterface(service);
-                try {
-                    mAndrozicLocationService.registerCallback(mAndrozicLocationCallback);
-                    Log.d(TAG, "Location service connected");
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+            mMapTrekLocationService = ILocationRemoteService.Stub.asInterface(service);
+            try {
+                mMapTrekLocationService.registerCallback(mMapTrekLocationCallback);
+                Log.d(TAG, "Location service connected");
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         }
 
         public void onServiceDisconnected(ComponentName className) {
             Log.d(TAG, "Location service disconnected");
             mMapTrekLocationService = null;
-            mAndrozicLocationService = null;
             isLocated = false;
         }
     };
@@ -723,39 +648,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
         public void onGpsStatusChanged() throws RemoteException {
             //TODO Send lost location status
             isLocated = mMapTrekLocationService.getStatus() == GPS_OK;
-        }
-    };
-
-    private final com.androzic.location.ILocationCallback mAndrozicLocationCallback = new com.androzic.location.ILocationCallback.Stub() {
-        @Override
-        public void onGpsStatusChanged(String provider, int status, int fsats, int tsats) {
-            if (LocationManager.GPS_PROVIDER.equals(provider)) {
-                switch (status) {
-                    case GPS_OFF:
-                    case GPS_SEARCHING:
-                        //TODO Send lost location status
-                }
-            }
-        }
-
-        @Override
-        public void onLocationChanged(Location loc, boolean continuous, boolean geoid, float smoothspeed, float avgspeed) {
-            synchronized (currentLocation) {
-                currentLocation.set(loc);
-                timeCorrection = System.currentTimeMillis() - currentLocation.getTime();
-            }
-        }
-
-        @Override
-        public void onProviderChanged(String provider) {
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
         }
     };
 

@@ -1,6 +1,22 @@
+/*
+ * Copyright 2024 Andrey Novikov
+ *
+ * This program is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with
+ * this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
+ */
+
 package com.androzic.plugin.locationshare;
 
-import android.Manifest;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
@@ -12,7 +28,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -44,7 +59,6 @@ import com.androzic.plugin.locationshare.databinding.ActUserlistBinding;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
 
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -55,14 +69,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
     private static final String[] MAPTREK_PERMISSIONS = {
             "mobi.maptrek.permission.RECEIVE_LOCATION",
             "mobi.maptrek.permission.WRITE_MAP_DATA"
-    };
-
-    private static final String[] ANDROZIC_PERMISSIONS = {
-            "com.androzic.permission.RECEIVE_LOCATION",
-            "com.androzic.permission.NAVIGATION",
-            "com.androzic.permission.READ_PREFERENCES",
-            "com.androzic.permission.READ_MAP_DATA",
-            "com.androzic.permission.WRITE_MAP_DATA"
     };
 
     private ActUserlistBinding binding;
@@ -78,7 +84,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
     private Drawable selectedBackground;
     private int lastSelectedPosition;
     private int accentColor;
-    private boolean mMapTrek;
     private String[] mPermissions;
 
     @Override
@@ -105,8 +110,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         binding.list.setAdapter(adapter);
         binding.list.setOnItemClickListener(this);
 
-        mMapTrek = sharedPreferences.getBoolean("maptrek", false);
-        mPermissions = mMapTrek ? MAPTREK_PERMISSIONS : ANDROZIC_PERMISSIONS;
+        mPermissions = MAPTREK_PERMISSIONS;
     }
 
     @Override
@@ -278,26 +282,16 @@ public class SituationList extends AppCompatActivity implements SharedPreference
 
         int id = item.getItemId();
         if (id == R.id.action_view) {
-            Intent i = new Intent(mMapTrek ? "mobi.maptrek.action.CENTER_ON_COORDINATES" : "com.androzic.CENTER_ON_COORDINATES");
+            Intent i = new Intent("mobi.maptrek.action.CENTER_ON_COORDINATES");
             i.putExtra("lat", situation.latitude);
             i.putExtra("lon", situation.longitude);
-            if (mMapTrek) {
-                startActivity(i);
-            } else {
-                sendBroadcast(i);
-            }
+            startActivity(i);
             finish();
             return true;
         } else if (id == R.id.action_navigate) {
-            Intent intent = new Intent(mMapTrek ? "mobi.maptrek.action.NAVIGATE_TO_OBJECT" : "com.androzic.navigateMapObjectWithId");
+            Intent intent = new Intent("mobi.maptrek.action.NAVIGATE_TO_OBJECT");
             intent.putExtra("id", situation.id);
-            if (mMapTrek) {
-                startActivity(intent);
-            } else {
-                intent = getExplicitIntent(intent);
-                if (intent != null)
-                    startService(intent);
-            }
+            startActivity(intent);
             finish();
             return true;
         }
@@ -473,31 +467,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
 
         if (adapter != null)
             adapter.notifyDataSetChanged();
-    }
-
-    public Intent getExplicitIntent(Intent implicitIntent) {
-        //Retrieve all services that can match the given intent
-        PackageManager pm = getPackageManager();
-        List<ResolveInfo> resolveInfo = pm.queryIntentServices(implicitIntent, 0);
-
-        //Make sure only one match was found
-        if (resolveInfo == null || resolveInfo.size() != 1) {
-            return null;
-        }
-
-        //Get component info and create ComponentName
-        ResolveInfo serviceInfo = resolveInfo.get(0);
-        String packageName = serviceInfo.serviceInfo.packageName;
-        String className = serviceInfo.serviceInfo.name;
-        ComponentName component = new ComponentName(packageName, className);
-
-        //Create a new intent. Use the old one for extras and such reuse
-        Intent explicitIntent = new Intent(implicitIntent);
-
-        //Set the component to be explicit
-        explicitIntent.setComponent(component);
-
-        return explicitIntent;
     }
 
     class UpdateTask extends TimerTask {
