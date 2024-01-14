@@ -2,8 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MapTrekLocationShare.iml" filepath="$PROJECT_DIR$/MapTrekLocationShare.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/LocationShare.iml" filepath="$PROJECT_DIR$/.idea/modules/LocationShare.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/LocationShare.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/LocationShare.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/LocationShare.app.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/LocationShare.app.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/LocationShare.app.main.iml" filepath="$PROJECT_DIR$/.idea/modules/app/LocationShare.app.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/LocationShare.app.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/LocationShare.app.unitTest.iml" />
     </modules>
   </component>
 </project>
