@@ -140,11 +140,16 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
         // Create notification channel
         if (android.os.Build.VERSION.SDK_INT >= 26) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             NotificationChannel channel = new NotificationChannel("ongoing",
-                    getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW);
+                    getString(R.string.notif_channel_ongoing), NotificationManager.IMPORTANCE_LOW);
             channel.setShowBadge(false);
             channel.setSound(null, null);
-            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+
+            channel = new NotificationChannel("social",
+                    getString(R.string.notif_channel_social), NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setShowBadge(false);
             notificationManager.createNotificationChannel(channel);
         }
 
@@ -344,36 +349,41 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     }
 
     protected void sendNewSituationNotification(Situation situation) {
-        Intent i = new Intent("com.androzic.COORDINATES_RECEIVED");
-        i.putExtra("title", session);
-        i.putExtra("sender", situation.name);
-        i.putExtra("origin", getApplicationContext().getPackageName());
+        Intent i = new Intent("mobi.maptrek.action.CENTER_ON_COORDINATES");
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         i.putExtra("lat", situation.latitude);
         i.putExtra("lon", situation.longitude);
 
         String msg = getString(R.string.notif_newsession, situation.name);
 
         Notification.Builder builder = new Notification.Builder(this);
+        if (Build.VERSION.SDK_INT > 25)
+            builder.setChannelId("social");
         builder.setWhen(situation.time);
         builder.setSmallIcon(R.mipmap.ic_stat_sharing);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, (int) situation.id, i, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) situation.id, i, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
-        builder.setContentTitle(getText(R.string.app_name));
+        builder.setContentTitle(getText(R.string.pref_sharing_title));
         builder.setContentText(msg);
-        builder.setTicker(msg);
         builder.setGroup("maptrek");
         builder.setAutoCancel(true);
         builder.setDefaults(Notification.DEFAULT_SOUND);
-        //builder.setCategory(Notification.CATEGORY_SOCIAL);
-        builder.setPriority(Notification.PRIORITY_LOW);
-        //builder.setVisibility(Notification.VISIBILITY_PRIVATE);
-        //builder.setColor(getResources().getColor(R.color.theme_accent_color));
+        builder.setCategory(Notification.CATEGORY_SOCIAL);
+        builder.setPriority(Notification.PRIORITY_DEFAULT);
+        builder.setVisibility(Notification.VISIBILITY_PRIVATE);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         notificationManager.notify((int) situation.id, builder.build());
     }
 
     private void sendMapObjects() throws RemoteException {
         synchronized (situationList) {
+            boolean firstRun = true;
+            for (Situation situation : situationList) {
+                if (situation.id != 0) {
+                    firstRun = false;
+                    break;
+                }
+            }
             for (Situation situation : situationList) {
                 byte[] bitmap = getSituationBitmap(situation);
                 ContentValues values = new ContentValues();
@@ -388,7 +398,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
                 if (situation.id == 0) {
                     Uri uri = contentProvider.insert(MAPOBJECTS_URI, values);
                     situation.id = ContentUris.parseId(uri);
-                    if (notifyNewSituation)
+                    if (notifyNewSituation && !firstRun)
                         sendNewSituationNotification(situation);
                 }
                 // Otherwise update it
@@ -421,7 +431,7 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
     }
 
     // This is not used in code, but included to demonstrate, how to remove
-    // single map object from Androzic map.
+    // single map object from Trekarta map.
     @SuppressWarnings("unused")
     private void removeMapObject(String name) {
         Situation situation = situations.get(name);
@@ -496,7 +506,6 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
             builder.setCategory(Notification.CATEGORY_PROGRESS);
         builder.setPriority(Notification.PRIORITY_LOW);
         builder.setVisibility(Notification.VISIBILITY_PUBLIC);
-        //builder.setColor(getResources().getColor(R.color.theme_accent_color));
         builder.setOngoing(true);
         return builder.build();
     }
