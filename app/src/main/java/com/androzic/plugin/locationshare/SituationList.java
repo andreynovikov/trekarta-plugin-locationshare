@@ -252,7 +252,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         bindService(new Intent(this, SharingService.class), sharingConnection, 0);
         timer = new Timer();
         TimerTask updateTask = new UpdateTask();
-        timer.scheduleAtFixedRate(updateTask, 1000, 1000);
+        timer.scheduleAtFixedRate(updateTask, 5000, 5000);
     }
 
     private void disconnect() {
@@ -426,10 +426,14 @@ public class SituationList extends AppCompatActivity implements SharedPreference
                 }
                 long now = System.currentTimeMillis();
                 long d = stn.time - sharingService.timeCorrection;
-                String delay = (String) DateUtils.getRelativeTimeSpanString(d, now, DateUtils.SECOND_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
                 text = (TextView) v.findViewById(R.id.delay);
                 if (text != null) {
-                    text.setText(delay);
+                    if (now - d > sharingService.updateInterval) {
+                        String delay = (String) DateUtils.getRelativeTimeSpanString(d, now, DateUtils.SECOND_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
+                        text.setText(delay);
+                    } else {
+                        text.setText("");
+                    }
                 }
                 if (stn.silent) {
                     text = (TextView) v.findViewById(R.id.name);
