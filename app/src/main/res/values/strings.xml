@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">MapTrek Location Share</string>
+    <string name="app_name">Trekarta Location Share</string>
     <string name="msg_needs_setup">You have to setup your session details</string>
     <string name="msg_needs_enable">Enable sharing to receive information about session users</string>
     <string name="msg_no_users">Looks like nobody shares their location with you</string>
+    <string name="msg_permissions_rationale">Permissions should be granted to display shared locations on map</string>
+    <string name="msg_needs_notifications">Location sharing requires to show notification to be able to work in background</string>
     <string name="notif_sharing">Sharing location in real-time</string>
     <string name="notif_error">Unable to share location</string>
     <string name="notif_newsession">%s has joined session</string>
-    <string name="notif_channel">Ongoing events</string>
+    <string name="notif_channel_ongoing">Ongoing events</string>
+    <string name="notif_channel_social">Session updates</string>
     <string name="menu_connect">Connect</string>
     <string name="menu_preferences">Settings</string>
     <string name="menu_view">View</string>
@@ -26,8 +29,8 @@
     <string name="pref_sharing_notifications_title">New user notification</string>
     <string name="pref_sharing_tagcolor_title">Tag color</string>
     <string name="pref_sharing_tagsize_title">Tag size</string>
-    <string name="msgPermissionsRationale">Permissions should be granted to display shared locations on map</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="grant">Grant</string>
 
 </resources>

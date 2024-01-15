@@ -17,6 +17,7 @@
 
 package com.androzic.plugin.locationshare;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
@@ -29,6 +30,8 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.text.format.DateUtils;
@@ -55,7 +58,9 @@ import com.androzic.data.Situation;
 import com.androzic.plugin.locationshare.databinding.ActUserlistBinding;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
+import com.google.android.material.snackbar.Snackbar;
 
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -105,7 +110,12 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         binding.list.setAdapter(adapter);
         binding.list.setOnItemClickListener(this);
 
-        mPermissions = MAPTREK_PERMISSIONS;
+        int length = MAPTREK_PERMISSIONS.length;
+        if (android.os.Build.VERSION.SDK_INT >= 33)
+            length++;
+        mPermissions = Arrays.copyOf(MAPTREK_PERMISSIONS, length);
+        if (android.os.Build.VERSION.SDK_INT >= 33)
+            mPermissions[length - 1] = Manifest.permission.POST_NOTIFICATIONS;
     }
 
     @Override
@@ -173,6 +183,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
                     actionBar.setSubtitle("");
                 binding.empty.setText(R.string.msg_needs_enable);
                 adapter.notifyDataSetChanged();
+                invalidateMenu();
             }
 
         } else if (id == R.id.action_settings) {
@@ -205,7 +216,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             shouldShow |= shouldShowRequestPermissionRationale(permission);
         if (shouldShow) {
             new AlertDialog.Builder(this)
-                    .setMessage(getString(R.string.msgPermissionsRationale))
+                    .setMessage(getString(R.string.msg_permissions_rationale))
                     .setPositiveButton(R.string.ok, (dialog, which) -> requestPermissions(mPermissions, PERMISSIONS_REQUEST))
                     .setNegativeButton(R.string.cancel, (dialog, which) -> finish())
                     .create()
@@ -220,10 +231,8 @@ public class SituationList extends AppCompatActivity implements SharedPreference
      */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        boolean granted = true;
         if (requestCode == PERMISSIONS_REQUEST) {
-            if (grantResults.length < 1)
-                granted = false;
+            boolean granted = grantResults.length >= 1;
             // Verify that each required permission has been granted, otherwise return false.
             for (int result : grantResults) {
                 if (result != PackageManager.PERMISSION_GRANTED) {
@@ -233,6 +242,35 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             }
             if (granted) {
                 start();
+            } else {
+                boolean notificationsDenied = false;
+                for (int i = 0; i < permissions.length; i++) {
+                    if (Manifest.permission.POST_NOTIFICATIONS.equals(permissions[i]))
+                        notificationsDenied = grantResults[i] != PackageManager.PERMISSION_GRANTED;
+                }
+                if (notificationsDenied) {
+                    final Snackbar snackbar = Snackbar.make(
+                            binding.content,
+                            getString(R.string.msg_needs_notifications),
+                            Snackbar.LENGTH_INDEFINITE
+                    );
+                    snackbar.setAction(R.string.grant, listener -> {
+                        Intent intent = new Intent();
+                        if (Build.VERSION.SDK_INT >= 26) {
+                            intent.setAction(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                            intent.putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        } else {
+                            intent.setAction(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(Uri.fromParts("package", getPackageName(), null));
+                        }
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                        startActivity(intent);
+                        snackbar.dismiss();
+                    });
+                    TextView snackbarTextView = snackbar.getView().findViewById(com.google.android.material.R.id.snackbar_text);
+                    snackbarTextView.setMaxLines(99);
+                    snackbar.show();
+                }
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -316,6 +354,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
                 if (actionBar != null)
                     actionBar.setSubtitle(sharingService.user + " ∈ " + sharingService.session);
                 adapter.notifyDataSetChanged();
+                invalidateMenu();
             });
             Log.d(TAG, "Sharing service connected");
         }
@@ -326,6 +365,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             if (actionBar != null)
                 actionBar.setSubtitle("");
             adapter.notifyDataSetChanged();
+            invalidateMenu();
             Log.d(TAG, "Sharing service disconnected");
         }
     };
@@ -335,11 +375,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(SharingService.BROADCAST_SITUATION_CHANGED)) {
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        adapter.notifyDataSetChanged();
-                    }
-                });
+                runOnUiThread(() -> adapter.notifyDataSetChanged());
             }
         }
     };
