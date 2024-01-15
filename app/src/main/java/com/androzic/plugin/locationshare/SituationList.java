@@ -42,15 +42,12 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
@@ -62,7 +59,7 @@ import com.androzic.util.StringFormatter;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class SituationList extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, OnItemClickListener, MenuItem.OnMenuItemClickListener, OnCheckedChangeListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
+public class SituationList extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener, OnItemClickListener, MenuItem.OnMenuItemClickListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
     private static final String TAG = "SituationList";
     private static final int PERMISSIONS_REQUEST = 1001;
 
@@ -77,8 +74,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
 
     private Timer timer;
     // private int timeoutInterval = 600; // 10 minutes (default)
-
-    private SwitchCompat enableSwitch;
 
     private int selectedPosition = -1;
     private Drawable selectedBackground;
@@ -137,15 +132,21 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.preferences, menu);
 
-        // Get widget's instance
-        menu.findItem(R.id.action_enable).setActionView(R.layout.switch_action);
-        enableSwitch = (SwitchCompat) menu.findItem(R.id.action_enable).getActionView();
-        enableSwitch.setOnCheckedChangeListener(this);
+        MenuItem power = menu.findItem(R.id.action_enable);
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        onSharedPreferenceChanged(sharedPreferences, null);
+        String session = sharedPreferences.getString(getString(R.string.pref_sharing_session), "");
+        String user = sharedPreferences.getString(getString(R.string.pref_sharing_user), "");
+        boolean canBeEnabled = !session.trim().equals("") && !user.trim().equals("");
+        if (canBeEnabled)
+            binding.empty.setText(R.string.msg_needs_enable);
+        else
+            binding.empty.setText(R.string.msg_needs_setup);
+        power.setEnabled(canBeEnabled);
+
         if (isServiceRunning()) {
-            enableSwitch.setChecked(true);
+            power.setChecked(true);
+            power.getIcon().setTint(accentColor);
         }
 
         return true;
@@ -154,7 +155,27 @@ public class SituationList extends AppCompatActivity implements SharedPreference
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_enable) {
+            if (!item.isChecked() && !isServiceRunning()) {
+                boolean notGranted = false;
+                for (String permission : mPermissions)
+                    notGranted |= checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED;
+                if (notGranted) {
+                    requestPermission();
+                } else {
+                    start();
+                }
+            } else if (item.isChecked() && isServiceRunning()) {
+                disconnect();
+                stopService(new Intent(this, SharingService.class));
+                ActionBar actionBar = getSupportActionBar();
+                if (actionBar != null)
+                    actionBar.setSubtitle("");
+                binding.empty.setText(R.string.msg_needs_enable);
+                adapter.notifyDataSetChanged();
+            }
+
+        } else if (id == R.id.action_settings) {
             startActivity(new Intent(this, Preferences.class));
             return true;
         } else if (id == android.R.id.home) {
@@ -176,28 +197,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         popupMenu.setOnMenuItemClickListener(this);
         popupMenu.setOnDismissListener(this);
         popupMenu.show();
-    }
-
-    @Override
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (isChecked && !isServiceRunning()) {
-            boolean notGranted = false;
-            for (String permission : mPermissions)
-                notGranted |= checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED;
-            if (notGranted) {
-                requestPermission();
-            } else {
-                start();
-            }
-        } else if (!isChecked && isServiceRunning()) {
-            disconnect();
-            stopService(new Intent(this, SharingService.class));
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null)
-                actionBar.setSubtitle("");
-            binding.empty.setText(R.string.msg_needs_enable);
-            adapter.notifyDataSetChanged();
-        }
     }
 
     private void requestPermission() {
@@ -234,8 +233,6 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             }
             if (granted) {
                 start();
-            } else {
-                enableSwitch.setChecked(false);
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -253,6 +250,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         timer = new Timer();
         TimerTask updateTask = new UpdateTask();
         timer.scheduleAtFixedRate(updateTask, 5000, 5000);
+        invalidateMenu();
     }
 
     private void disconnect() {
@@ -265,6 +263,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             timer.cancel();
             timer = null;
         }
+        invalidateMenu();
     }
 
     private boolean isServiceRunning() {
@@ -459,16 +458,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        String session = sharedPreferences.getString(getString(R.string.pref_sharing_session), "");
-        String user = sharedPreferences.getString(getString(R.string.pref_sharing_user), "");
-        if (!session.trim().equals("") && !user.trim().equals("")) {
-            enableSwitch.setEnabled(true);
-            binding.empty.setText(R.string.msg_needs_enable);
-        } else {
-            enableSwitch.setEnabled(false);
-            binding.empty.setText(R.string.msg_needs_setup);
-        }
-
+        invalidateMenu();
         if (adapter != null)
             adapter.notifyDataSetChanged();
     }

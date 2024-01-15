@@ -9,6 +9,7 @@
     <string name="notif_error">Unable to share location</string>
     <string name="notif_newsession">%s has joined session</string>
     <string name="notif_channel">Ongoing events</string>
+    <string name="menu_connect">Connect</string>
     <string name="menu_preferences">Settings</string>
     <string name="menu_view">View</string>
     <string name="menu_navigate">Navigate</string>
