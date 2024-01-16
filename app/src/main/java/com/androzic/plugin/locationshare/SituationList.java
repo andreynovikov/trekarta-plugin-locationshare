@@ -47,6 +47,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -58,6 +59,7 @@ import com.androzic.data.Situation;
 import com.androzic.plugin.locationshare.databinding.ActUserlistBinding;
 import com.androzic.util.Geo;
 import com.androzic.util.StringFormatter;
+import com.google.android.material.color.MaterialColors;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Arrays;
@@ -83,7 +85,8 @@ public class SituationList extends AppCompatActivity implements SharedPreference
     private int selectedPosition = -1;
     private Drawable selectedBackground;
     private int lastSelectedPosition;
-    private int accentColor;
+    @ColorInt private int accentColor;
+    @ColorInt private int backgroundColor;
     private String[] mPermissions;
 
     @Override
@@ -105,6 +108,8 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         accentColor = getResources().getColor(R.color.seed, getTheme());
+        backgroundColor = MaterialColors.getColor(this, com.google.android.material.R.attr.colorTertiaryContainer, accentColor);
+
 
         adapter = new SituationListAdapter(this);
         binding.list.setAdapter(adapter);
@@ -157,6 +162,10 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         if (isServiceRunning()) {
             power.setChecked(true);
             power.getIcon().setTint(accentColor);
+        } else {
+            power.setChecked(false);
+            int color = MaterialColors.getColor(this, com.google.android.material.R.attr.colorControlNormal, 0);
+            power.getIcon().setTint(color);
         }
 
         return true;
@@ -202,7 +211,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
         selectedPosition = position;
         selectedBackground = v.getBackground();
         lastSelectedPosition = position;
-        v.setBackgroundColor(accentColor);
+        v.setBackgroundColor(backgroundColor);
         PopupMenu popupMenu = new PopupMenu(this, v.findViewById(R.id.name));
         popupMenu.inflate(R.menu.situation_popup);
         popupMenu.setOnMenuItemClickListener(this);
@@ -250,7 +259,7 @@ public class SituationList extends AppCompatActivity implements SharedPreference
                 }
                 if (notificationsDenied) {
                     final Snackbar snackbar = Snackbar.make(
-                            binding.content,
+                            binding.layout,
                             getString(R.string.msg_needs_notifications),
                             Snackbar.LENGTH_INDEFINITE
                     );
@@ -424,12 +433,10 @@ public class SituationList extends AppCompatActivity implements SharedPreference
             if (convertView == null) {
                 v = mInflater.inflate(mItemLayout, parent, false);
             } else {
-                // v = convertView;
-                // TODO Have to utilize view
-                v = mInflater.inflate(mItemLayout, parent, false);
+                v = convertView;
             }
             if (position == selectedPosition)
-                v.setBackgroundColor(accentColor);
+                v.setBackgroundColor(backgroundColor);
 
             Situation stn = getItem(position);
             if (stn != null && sharingService != null) {
