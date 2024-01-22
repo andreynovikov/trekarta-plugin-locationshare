@@ -216,8 +216,10 @@ public class SharingService extends Service implements OnSharedPreferenceChangeL
 
         stopForeground(true);
         stopTimer();
-        requestQueue.stop();
-        requestQueue = null;
+        if (requestQueue != null) {
+            requestQueue.stop();
+            requestQueue = null;
+        }
 
         // Clear data
         clearSituations();
